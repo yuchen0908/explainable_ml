@@ -13,6 +13,6 @@ Environment setup
 pip install -U -r requirements.txt
 
 Reference
-[Intepretable Machine Learing Repo](https://github.com/christophM/interpretable-ml-book)
-[sklearn documentation](https://scikit-learn.org/stable/)
-[matplotlib documentation]()
+* [Intepretable Machine Learing Repo](https://github.com/christophM/interpretable-ml-book)
+* [sklearn documentation](https://scikit-learn.org/stable/)
+* [matplotlib documentation](https://matplotlib.org/)
