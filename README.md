@@ -2,17 +2,20 @@
 * The objective is to practise techniques presented by [Interpretable Machine Learning by Christoph Molnar](https://christophm.github.io/interpretable-ml-book/)
 * Eventually, turning all the practise into a re-usable library
 
-TO-DO list
-1. we need to pre-train models. Train cancer probability for cancer dataset, and number of bikes for bike dataset
+# Schedule / To-do list
+1. 18/04/2022 to 24/04/2022
+   - [x] Train the number of bikes for bike dataset
+   - [ ] Train youtube spam classification
+   - [ ] Partial dependence plot
+2. 25/04/2022 to 01/05/2022
+   - [ ] Accumulated Local Effects
+   - [ ] Feature Interaction
+   - [ ] Functional Decomposition
 
-Some questions to answer:
-1. ML covers a wide range of algorithms, regression, classification, clustering, anomaly detection, dimension reduction, recommendation, etc.. what do the techniques cover? what do not?
-2. 
-
-Environment setup
+# Environment setup
 pip install -U -r requirements.txt
 
-Reference
+# Reference
 * [Intepretable Machine Learing Repo](https://github.com/christophM/interpretable-ml-book)
 * [sklearn documentation](https://scikit-learn.org/stable/)
 * [matplotlib documentation](https://matplotlib.org/)
