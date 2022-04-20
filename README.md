@@ -4,7 +4,7 @@
 
 # Schedule / To-do list
 1. 18/04/2022 to 24/04/2022
-   - [x] Train the number of bikes for bike dataset
+   - [x] Train the number of bikes for bike dataset (s4.1_bike_rental.ipynb, reusable function - plot_learning_curve())
    - [ ] Train youtube spam classification
    - [ ] Partial dependence plot
 2. 25/04/2022 to 01/05/2022

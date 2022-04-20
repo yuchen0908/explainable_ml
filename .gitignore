@@ -1,2 +1,4 @@
 # any json file
 **.json
+# any python dependency files
+**.pyc
