@@ -3,3 +3,4 @@ matplotlib
 jupyter
 seaborn
 lightgbm
+pdpbox
