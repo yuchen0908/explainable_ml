@@ -86,4 +86,58 @@ def plot_actual_and_pred(estimator, X, y):
     ax.set_title(f"actual vs predicted response, R^2 {np.round(r2_score(y, estimator.predict(X).reshape(-1,1)),2)}")
     ax.grid(True)
     return plt
+
+def plot_pdp(estimator, X, var_idx, var_thr=10, var_name = "feature", ylim=None, n_split=100):
+    """
+    :Args:
+        - estimator, model
+        - X (numpy.array), input features
+        - var_idx, the target feature index
+        - var_thr (int), the threshold to decide whether a feature is ordinal or numerical variable
+            For example, if we set var_thr = 10, then if there is 10 unique values or less from the variable
+            It will be defined as an ordinal variable
+        - ylim (tuple), to set up the y limits of the plot
+        - n_split (int), define the resolution of feature if var_cd is "number"
+    :Return:
+        - numpy.array
+    """
+    X_pdp = dict()
+    y_pdp = dict()
+    var_unique = np.unique(X[:,var_idx]) # target feature's unique values
+    
+    # some testing 
+    assert isinstance(var_thr,int), 'var_thr has to be an integer'
+    
+    # generate the pdp's x-axis
+    if len(var_unique) > var_thr:
+        plot_cd = 'line'
+        ntile = np.linspace(start = 0, stop = 1, num = n_split + 1)
+        var_label = [np.quantile(X[:,var_idx], i) for i in ntile]
+    else:
+        plot_cd = 'bar'
+        var_label = var_unique
+    
+    # generate pdp's y-axis
+    for i in range(len(var_label)):
+        X_pdp[var_label[i]] = X.copy()
+        X_pdp[var_label[i]][:,var_idx] = var_label[i]
+        y_pdp[var_label[i]] = np.mean(
+            estimator.predict(X_pdp[var_label[i]])
+            )
+    
+    # plotting
+    f,ax = plt.subplots(figsize=(7,3))
+    if ylim is not None:
+        plt.ylim(*ylim)
+    if plot_cd == 'bar':
+        ax.bar(x = list(y_pdp.keys()), height = list(y_pdp.values()), width = 0.5, align = 'center', color = "#2492ff")
+        for k,v in y_pdp.items():
+            ax.text(k, v, np.round(v,3), horizontalalignment='center')
+    elif plot_cd == 'line':
+        ax.plot(list(y_pdp.keys()), list(y_pdp.values()), '.-', color = "#2492ff")
+    ax.set_title(f"Partial Dependency Plot - {var_name}")
+    ax.set_xlabel(var_name)
+    ax.set_ylabel("Average Predicted Value")
+    
+    return plt
     
