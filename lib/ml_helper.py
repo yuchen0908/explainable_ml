@@ -87,10 +87,11 @@ def plot_actual_and_pred(estimator, X, y):
     ax.grid(True)
     return plt
 
-def plot_pdp(estimator, X, var_idx, var_thr=10, var_name = "feature", ylim=None, n_split=100):
+def plot_pdp(estimator, estimator_cd, X, var_idx, var_thr=10, var_name = "feature", ylim=None, n_split=100):
     """
     :Args:
         - estimator, model
+        - estimator_cd (str), either classification or regression
         - X (numpy.array), input features
         - var_idx, the target feature index
         - var_thr (int), the threshold to decide whether a feature is ordinal or numerical variable
@@ -107,6 +108,7 @@ def plot_pdp(estimator, X, var_idx, var_thr=10, var_name = "feature", ylim=None,
     
     # some testing 
     assert isinstance(var_thr,int), 'var_thr has to be an integer'
+    assert estimator_cd in ('classification','regression'), 'doesn\'t support your estimator type'
     
     # generate the pdp's x-axis
     if len(var_unique) > var_thr:
@@ -121,9 +123,17 @@ def plot_pdp(estimator, X, var_idx, var_thr=10, var_name = "feature", ylim=None,
     for i in range(len(var_label)):
         X_pdp[var_label[i]] = X.copy()
         X_pdp[var_label[i]][:,var_idx] = var_label[i]
-        y_pdp[var_label[i]] = np.mean(
-            estimator.predict(X_pdp[var_label[i]])
-            )
+        if estimator_cd == 'regression':
+            y_pdp[var_label[i]] = np.mean(
+                estimator.predict(X_pdp[var_label[i]])
+                )
+        elif estimator_cd == 'classification':
+            y_pdp[var_label[i]] = np.mean(
+                # get class = 1 probability
+                estimator.predict_proba(X_pdp[var_label[i]]).reshape(-1,2)[:,1]
+                # get the actual prediction value like 0 or 1
+                # estimator.predict(X_pdp[var_label[i]])
+                )
     
     # plotting
     f,ax = plt.subplots(figsize=(7,3))
