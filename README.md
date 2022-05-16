@@ -4,11 +4,11 @@
 
 # Schedule / To-do list
 1. 18/04/2022 to 24/04/2022
-   - [x] Train the number of bikes for bike dataset (s4.1_bike_rental.ipynb, reusable function - plot_learning_curve())
-   - [x] Train cancer classification
-   - [x] Partial dependence plot
+   - [x] s4.1 - Train the number of bikes for bike dataset (s4.1_bike_rental.ipynb, reusable function - plot_learning_curve())
+   - [x] s4.3 - Train cancer classification
+   - [x] s8.1 - Partial dependence plot
 2. 25/04/2022 to 01/05/2022
-   - [ ] Accumulated Local Effects
+   - [ ] s8.2 - Accumulated Local Effects
    - [ ] Feature Interaction
    - [ ] Functional Decomposition
 
