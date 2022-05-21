@@ -88,7 +88,7 @@ def plot_actual_and_pred(estimator, X, y):
     return plt
 
 def plot_pdp(estimator, estimator_cd, X, var_idx, var_thr=10, var_name = "feature", ylim=None, n_split=100):
-    """
+    """ the function is only valid for one variable explanation.
     :Args:
         - estimator, model
         - estimator_cd (str), either classification or regression
@@ -150,4 +150,56 @@ def plot_pdp(estimator, estimator_cd, X, var_idx, var_thr=10, var_name = "featur
     ax.set_ylabel("Average Predicted Value")
     
     return plt
+
+
+def plot_ale(estimator
+    #, estimator_cd
+    , X, var_idx
+    #, var_thr=10
+    , var_name = "feature", ylim=None, n_split=100):
+    def replace_value(X, var_idx, value_to_replace):
+        X[:,var_idx] = value_to_replace 
+        return X
+
+    X_ale = dict()
+    y_ale = dict()
+    y_ale_acc = dict()
+    y_ale_cent = dict()
+
+    # split data into buckets, to get ready for local effect calculation for each bucket
+    ntile = np.linspace(start = 0, stop = 1, num = n_split + 1)
+    var_label = [np.quantile(X[:,var_idx], i) for i in ntile]
+    var_parts = {i:(var_label[i], var_label[i+1]) for i in range(n_split)}
+
+    # calculate the local effect for each bucket
+    for i in range(n_split):
+        mask = var_parts[i]
+        if i >= 1:
+            X_ale[i] = X[(X[:,var_idx]>mask[0]) & (X[:,var_idx]<=mask[1]),:]
+        else:
+            X_ale[i] = X[(X[:,var_idx]>=mask[0]) & (X[:,var_idx]<=mask[1]),:]
+
+        y_ale[i] = np.sum(\
+            estimator.predict(replace_value(X_ale[i], var_idx, mask[1])) \
+            - estimator.predict(replace_value(X_ale[i], var_idx, mask[0]))) \
+            / X_ale[i].shape[0]
+        
+        # accumulated result
+        y_ale_acc[i] = np.sum([v for v in y_ale.values()])
     
+    # centralise result
+    bias = 1 / X.shape[0] * np.dot(np.array([item.shape[0] for item in X_ale.values()]), np.array(list(y_ale_acc.values())))
+    # we chose lower bound as our x-axis
+    y_ale_cent = {var_parts[k][0]:(v - bias) for k,v in y_ale_acc.items()}
+
+    # plotting
+    f,ax = plt.subplots(figsize=(7,3))
+    if ylim is not None:
+        plt.ylim(*ylim)
+
+    ax.plot(list(y_ale_cent.keys()), list(y_ale_cent.values()), '.-', color = "#2492ff")
+    ax.set_title(f"Accumulated Local Effect - {var_name}")
+    ax.set_xlabel(var_name)
+    ax.set_ylabel("Effect")
+    
+    return plt
