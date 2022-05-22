@@ -1,5 +1,7 @@
+from operator import is_
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 from sklearn.model_selection import learning_curve
 from sklearn.metrics import confusion_matrix, r2_score
 
@@ -100,7 +102,7 @@ def plot_pdp(estimator, estimator_cd, X, var_idx, var_thr=10, var_name = "featur
         - ylim (tuple), to set up the y limits of the plot
         - n_split (int), define the resolution of feature if var_cd is "number"
     :Return:
-        - numpy.array
+        - plt object
     """
     X_pdp = dict()
     y_pdp = dict()
@@ -152,52 +154,85 @@ def plot_pdp(estimator, estimator_cd, X, var_idx, var_thr=10, var_name = "featur
     return plt
 
 
-def plot_ale(estimator
-    #, estimator_cd
-    , X, var_idx
-    #, var_thr=10
-    , var_name = "feature", ylim=None, n_split=100):
+def plot_ale(estimator, estimator_cd, X, var_idx, var_cd="numerical", var_name = "feature", ylim=None, n_split=100, is_centre=True):
+    """ the function is only valid for one variable explanation.
+    NOTE: we can improve the function performance based on how we bucketise X. We don't necessarily need to replicate X multiple times.
+    :Args:
+        - estimator, model
+        - estimator_cd (str), either classification or regression
+        - X (numpy.array), input features. Categorical variables require to be converted to numerical variables.
+        - var_idx, the target feature index
+        - var_thr (str), "categorical" or "numerical"
+        - ylim (tuple), to set up the y limits of the plot
+        - n_split (int), define the resolution of feature if var_cd is "number"
+        - is_centre (bool), a flag to decide whether to plot main effect with or without average effect
+    :Return:
+        - plt object
+    """
+
     def replace_value(X, var_idx, value_to_replace):
+        # replace values of a column of X numpy array
         X[:,var_idx] = value_to_replace 
         return X
+    
+    # some testing 
+    assert estimator_cd in ('classification','regression'), 'doesn\'t support your estimator type'
+    assert var_cd in ('numerical','categorical'), 'doesn\'t support your variable type'
 
+    # empty dictionaries
     X_ale = dict()
     y_ale = dict()
     y_ale_acc = dict()
-    y_ale_cent = dict()
+    y_ale_output = dict()
 
     # split data into buckets, to get ready for local effect calculation for each bucket
-    ntile = np.linspace(start = 0, stop = 1, num = n_split + 1)
-    var_label = [np.quantile(X[:,var_idx], i) for i in ntile]
-    var_parts = {i:(var_label[i], var_label[i+1]) for i in range(n_split)}
-
+    # categorial or numerical
+    
+    if var_cd == 'numerical':
+        ntile = np.linspace(start = 0, stop = 1, num = n_split + 1)
+        var_label = [np.quantile(X[:,var_idx], i) for i in ntile]
+        var_parts = {(i+1):(var_label[i], var_label[i+1]) for i in range(n_split)}
+        delta = np.mean([v[1] - v[0] for v in var_parts.values()]) # averaged gap between upper and lower bound
+        var_parts[0] = (var_label[0] - delta, var_label[0]) 
+    else:
+        var_unique = np.unique(X[:,var_idx]) # target feature's unique values
+        var_label = np.sort(var_unique)
+        var_parts = {(i+1):(var_label[i], var_label[i+1]) for i in range(len(var_label) - 1)}
+        delta = 1
+        var_parts[0] = (var_label[0] - delta, var_label[0]) 
+    
     # calculate the local effect for each bucket
-    for i in range(n_split):
+    for i in range(len(var_parts)):
         mask = var_parts[i]
-        if i >= 1:
-            X_ale[i] = X[(X[:,var_idx]>mask[0]) & (X[:,var_idx]<=mask[1]),:]
+        X_ale[i] = X[(X[:,var_idx]>mask[0]) & (X[:,var_idx]<=mask[1]),:]
+        if estimator_cd == 'regression':
+            y_ale[i] = np.sum(\
+                estimator.predict(replace_value(X_ale[i], var_idx, mask[1])) \
+                - estimator.predict(replace_value(X_ale[i], var_idx, mask[0]))) \
+                / X_ale[i].shape[0]
         else:
-            X_ale[i] = X[(X[:,var_idx]>=mask[0]) & (X[:,var_idx]<=mask[1]),:]
-
-        y_ale[i] = np.sum(\
-            estimator.predict(replace_value(X_ale[i], var_idx, mask[1])) \
-            - estimator.predict(replace_value(X_ale[i], var_idx, mask[0]))) \
-            / X_ale[i].shape[0]
+            y_ale[i] = np.sum(\
+                estimator.predict_proba(replace_value(X_ale[i], var_idx, mask[1])).reshape(-1,2)[:,1] \
+                - estimator.predict_proba(replace_value(X_ale[i], var_idx, mask[0])).reshape(-1,2)[:,1]) \
+                / X_ale[i].shape[0]
         
         # accumulated result
         y_ale_acc[i] = np.sum([v for v in y_ale.values()])
     
-    # centralise result
+    # centralise result or not
     bias = 1 / X.shape[0] * np.dot(np.array([item.shape[0] for item in X_ale.values()]), np.array(list(y_ale_acc.values())))
-    # we chose lower bound as our x-axis
-    y_ale_cent = {var_parts[k][0]:(v - bias) for k,v in y_ale_acc.items()}
+    # we chose upper bound as our x-axis
+    if is_centre:
+        y_ale_output = {var_parts[k][1]:(v - bias) for k,v in y_ale_acc.items()}
+    else:
+        y_ale_output = {var_parts[k][1]:v for k,v in y_ale_acc.items()}
 
     # plotting
     f,ax = plt.subplots(figsize=(7,3))
     if ylim is not None:
         plt.ylim(*ylim)
 
-    ax.plot(list(y_ale_cent.keys()), list(y_ale_cent.values()), '.-', color = "#2492ff")
+    ax.plot(list(y_ale_output.keys()), list(y_ale_output.values()), '.-', color = "#2492ff")
     ax.set_title(f"Accumulated Local Effect - {var_name}")
     ax.set_xlabel(var_name)
     ax.set_ylabel("Effect")

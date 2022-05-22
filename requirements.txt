@@ -1,5 +1,7 @@
 pandas
-matplotlib
+freetype-py
+pypng
+matplotlib==3.2.2
 jupyter
 seaborn
 lightgbm
