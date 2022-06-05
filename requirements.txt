@@ -1,9 +1,9 @@
-pandas
+pandas==1.4.2
 freetype-py
 pypng
 matplotlib==3.2.2
 jupyter
 seaborn
-lightgbm
+lightgbm==3.3.2
 pdpbox
 alibi

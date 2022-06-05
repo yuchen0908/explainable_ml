@@ -194,6 +194,7 @@ def plot_ale(estimator, estimator_cd, X, var_idx, var_cd="numerical", var_name =
         var_parts = {(i+1):(var_label[i], var_label[i+1]) for i in range(n_split)}
         delta = np.mean([v[1] - v[0] for v in var_parts.values()]) # averaged gap between upper and lower bound
         var_parts[0] = (var_label[0] - delta, var_label[0]) 
+        assert len(var_label) == len(np.unique(var_label)), 'cant generate ntile given duplicated values'
     else:
         var_unique = np.unique(X[:,var_idx]) # target feature's unique values
         var_label = np.sort(var_unique)
@@ -212,9 +213,9 @@ def plot_ale(estimator, estimator_cd, X, var_idx, var_cd="numerical", var_name =
                 / X_ale[i].shape[0]
         else:
             y_ale[i] = np.sum(\
-                estimator.predict_proba(replace_value(X_ale[i], var_idx, mask[1])).reshape(-1,2)[:,1] \
-                - estimator.predict_proba(replace_value(X_ale[i], var_idx, mask[0])).reshape(-1,2)[:,1]) \
-                / X_ale[i].shape[0]
+                estimator.predict(replace_value(X_ale[i], var_idx, mask[1])) - \
+                estimator.predict(replace_value(X_ale[i], var_idx, mask[0])) \
+            ) / X_ale[i].shape[0]
         
         # accumulated result
         y_ale_acc[i] = np.sum([v for v in y_ale.values()])
